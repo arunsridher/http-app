@@ -2,6 +2,20 @@ import React, { Component } from "react";
 import axios from "axios";
 import "./App.css";
 
+axios.interceptors.response.use(null, (error) => {
+  const expectedError =
+    error.response &&
+    error.response.status >= 400 &&
+    error.response.status < 500;
+
+  if (!expectedError) {
+    console.log("Logging the error ", error);
+    alert("An unexpected error occured.");
+  }
+
+  return Promise.reject(error);
+});
+
 const apiEndpoint = "https://jsonplaceholder.typicode.com/posts";
 class App extends Component {
   state = {
@@ -33,11 +47,22 @@ class App extends Component {
   };
 
   handleDelete = async (post) => {
-    console.log("Delete ", post);
-    const response = await axios.delete(`${apiEndpoint}/${post.id}`);
-    if (response.status === 200) {
-      let posts = this.state.posts.filter((p) => p.id !== post.id);
-      this.setState({ posts });
+    // optimistic update
+    const originalPosts = this.state.posts;
+    let posts = this.state.posts.filter((p) => p.id !== post.id);
+    this.setState({ posts });
+    try {
+      await axios.delete(`${apiEndpoint}/${post.id}`);
+      throw new Error("Dummy error for testing");
+    } catch (err) {
+      // Expected (404: not found, 400: bad request) - CLIENT ERRORS - Display a specific message
+      // Unexpected - (network/server/database down/bug in application) - LOG the ERROR - Display a generic & friendly message
+
+      if (err.response && err.response.status === 404) {
+        alert("This post has already been deleted");
+      }
+
+      this.setState({ posts: originalPosts });
     }
   };
 
