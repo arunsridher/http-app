@@ -1,21 +1,21 @@
 import React, { Component } from "react";
 import http from "./services/HttpService";
+import config from "./config.json";
 import "./App.css";
 
-const apiEndpoint = "https://jsonplaceholder.typicode.com/posts";
 class App extends Component {
   state = {
     posts: [],
   };
 
   async componentDidMount() {
-    const { data: posts } = await http.get(apiEndpoint);
+    const { data: posts } = await http.get(config.apiEndpoint);
     this.setState({ posts });
   }
 
   handleAdd = async () => {
     const obj = { title: "Title", body: "Body" };
-    const { data } = await http.post(apiEndpoint, obj);
+    const { data } = await http.post(config.apiEndpoint, obj);
     console.log(data);
     const posts = [data, ...this.state.posts];
     this.setState({ posts });
@@ -23,7 +23,7 @@ class App extends Component {
 
   handleUpdate = async (post) => {
     post.title = "Arun";
-    const response = await http.put(`${apiEndpoint}/${post.id}`, post);
+    const response = await http.put(`${config.apiEndpoint}/${post.id}`, post);
     if (response.status === 200) {
       let posts = [...this.state.posts];
       const index = posts.indexOf(post);
@@ -38,7 +38,7 @@ class App extends Component {
     let posts = this.state.posts.filter((p) => p.id !== post.id);
     this.setState({ posts });
     try {
-      await http.delete(`${apiEndpoint}/${post.id}`);
+      await http.delete(`${config.apiEndpoint}/${post.id}`);
       throw new Error("Dummy error for testing");
     } catch (err) {
       // Expected (404: not found, 400: bad request) - CLIENT ERRORS - Display a specific message
